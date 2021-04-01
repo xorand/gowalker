@@ -30,14 +30,13 @@ func walk_single(path string) {
 }
 
 func walk_multi(wg *sync.WaitGroup, path string) {
-	defer wg.Done()
-	wg.Add(1)
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		log.Fatal(err)
 	}
 	for _, f := range files {
 		if f.IsDir() {
+			wg.Add(1)
 			go walk_multi(wg, path+"\\"+f.Name())
 		} else {
 			hash := fmt.Sprintf("%s%d", f.Name(), f.Size())
@@ -46,6 +45,7 @@ func walk_multi(wg *sync.WaitGroup, path string) {
 			walked_lock.Unlock()
 		}
 	}
+	wg.Done()
 }
 
 func main() {
@@ -60,6 +60,7 @@ func main() {
 	time1 := time.Now()
 	if arg_multi {
 		var wg sync.WaitGroup
+		wg.Add(1)
 		walk_multi(&wg, arg_path)
 		wg.Wait()
 	} else {
